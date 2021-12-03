@@ -1,5 +1,12 @@
 # X.9 Structures, Unions, and Enumerations
 
+---
+
+The code solutions might have implicit `#include` and `using` directives, and be
+assumed to be inside the `main` function.
+
+---
+
 1. ```cpp
    struct Big // 64 bytes
    {

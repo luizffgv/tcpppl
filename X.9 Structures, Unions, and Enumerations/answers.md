@@ -139,3 +139,102 @@ assumed to be inside the `main` function.
    Date::Date(istream &&iss) : Date{iss} {}
    Date::Date(string const &str) : Date{istringstream{str}} {}
    ```
+
+5. ```cpp
+   enum Season
+   {
+       // Explicitly set values to make it clear that they should not be changed
+       spring = 0,
+       summer = 1,
+       autumn = 2,
+       winter = 3
+   };
+
+   array<string, 4> GetStrings(locale const &loc)
+   {
+       class LocaleCmp
+       {
+       public:
+           bool operator()(locale const &lhs, locale const &rhs) const
+           {
+               return lhs.name() < rhs.name();
+           }
+       };
+
+       // My implementation only supports locales "C" and "POSIX"
+       const map<locale, array<string, 4>, LocaleCmp> seasons{
+         {locale{"C"}, {"spring", "summer", "autumn", "winter"}},
+         {locale{"POSIX"}, {"spring", "summer", "autumn", "winter"}}};
+
+       if (auto where{seasons.find(loc)}; where != seasons.end())
+           return where->second;
+       else if (where = seasons.find(locale{}), where != seasons.end())
+           return where->second;
+       else
+           return seasons.at(locale{"C"});
+   }
+
+   Season &operator++(Season &season)
+   {
+       switch (season)
+       {
+       case spring: season = summer; break;
+       case summer: season = autumn; break;
+       case autumn: season = winter; break;
+       case winter: season = spring;
+       }
+
+       return season;
+   }
+
+   Season operator++(Season &season, int)
+   {
+       auto tmp{season};
+       ++season;
+       return tmp;
+   }
+
+   Season &operator--(Season &season)
+   {
+       switch (season)
+       {
+       case spring: season = winter; break;
+       case summer: season = spring; break;
+       case autumn: season = summer; break;
+       case winter: season = autumn;
+       }
+
+       return season;
+   }
+
+   Season operator--(Season &season, int)
+   {
+       auto tmp{season};
+       --season;
+       return tmp;
+   }
+
+   template <typename CharT, typename Traits>
+   basic_ostream<CharT, Traits> &operator<<(basic_ostream<CharT, Traits> &lhs,
+                                            Season const                 &rhs)
+   {
+       return lhs << GetStrings(lhs.getloc())[rhs];
+   }
+
+   template <typename CharT, typename Traits>
+   basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &lhs,
+                                            Season                       &rhs)
+   {
+       string input;
+       lhs >> input;
+
+       auto strs{GetStrings(lhs.getloc())};
+       if (auto where{find(strs.begin(), strs.end(), input)}; where != strs.end())
+           rhs
+             = static_cast<decay_t<decltype(rhs)>>(distance(strs.begin(), where));
+       else
+           lhs.setstate(ios_base::failbit);
+
+       return lhs;
+   }
+   ```
